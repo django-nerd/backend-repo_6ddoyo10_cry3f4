@@ -100,6 +100,63 @@ def get_schema():
     }
 
 
+# ----- Seed demo data (10 models, 5 gigs) -----
+@app.post("/api/seed")
+def seed_demo():
+    if db is None:
+        raise HTTPException(status_code=500, detail="Database not configured")
+
+    model_count = db["model"].count_documents({})
+    gig_count = db["gig"].count_documents({})
+
+    created_models = 0
+    created_gigs = 0
+
+    if model_count < 10:
+        demo_models = [
+            {"name": "Ava Collins", "city": "Miami", "skills": ["VIP", "Bottle Service", "Promo"], "experience_years": 3, "hourly_rate": 45},
+            {"name": "Mia Lopez", "city": "New York", "skills": ["Hostess", "Bilingual"], "experience_years": 2, "hourly_rate": 40},
+            {"name": "Sofia Rossi", "city": "Las Vegas", "skills": ["VIP", "Front Desk"], "experience_years": 4, "hourly_rate": 55},
+            {"name": "Isabella Nguyen", "city": "Los Angeles", "skills": ["Registration", "Promo", "Greeter"], "experience_years": 1, "hourly_rate": 35},
+            {"name": "Layla Patel", "city": "Chicago", "skills": ["Model", "VIP", "Check-in"], "experience_years": 5, "hourly_rate": 50},
+            {"name": "Zoe Martin", "city": "Austin", "skills": ["Promo", "Sampling"], "experience_years": 2, "hourly_rate": 38},
+            {"name": "Emily Carter", "city": "San Diego", "skills": ["VIP", "Hostess"], "experience_years": 3, "hourly_rate": 42},
+            {"name": "Aria Kim", "city": "Seattle", "skills": ["Registration", "Greeter"], "experience_years": 1, "hourly_rate": 32},
+            {"name": "Victoria Adams", "city": "Houston", "skills": ["Bottle Service", "VIP"], "experience_years": 6, "hourly_rate": 60},
+            {"name": "Nina Petrova", "city": "Miami", "skills": ["Model", "Promo"], "experience_years": 3, "hourly_rate": 45}
+        ]
+        for m in demo_models:
+            try:
+                create_document("model", ModelSchema(**m))
+                created_models += 1
+            except Exception:
+                pass
+
+    if gig_count < 5:
+        demo_gigs = [
+            {"title": "VIP Hostess - Grand Opening", "club_name": "Blue Flame", "city": "Miami", "date": "Fri 10PM-2AM", "pay": "$45/hr + tips", "requirements": ["VIP experience", "All black attire"], "spots": 3, "notes": "4-hour shift for opening night."},
+            {"title": "Bottle Service Model", "club_name": "Neon Room", "city": "Las Vegas", "date": "Sat 9PM-4AM", "pay": "$55/hr + bonus", "requirements": ["Bottle service", "Friendly, energetic"], "spots": 4, "notes": "All-night set, peak hours 11PM-2AM."},
+            {"title": "Check-in & Greeter", "club_name": "Skyline", "city": "New York", "date": "Thu 7PM-11PM", "pay": "$35/hr", "requirements": ["Registration", "Bilingual preferred"], "spots": 2, "notes": "Short 4-hour evening event."},
+            {"title": "Promo Team - Launch Party", "club_name": "Echo", "city": "Los Angeles", "date": "Fri 8PM-12AM", "pay": "$40/hr + merch", "requirements": ["Promo", "Comfortable on camera"], "spots": 5, "notes": "Half-night promo push."},
+            {"title": "VIP Table Host", "club_name": "Aurora", "city": "Chicago", "date": "Sat 10PM-3AM", "pay": "$50/hr + tips", "requirements": ["VIP", "High-end service"], "spots": 2, "notes": "Full-night coverage for VIP tables."}
+        ]
+        for g in demo_gigs:
+            try:
+                create_document("gig", GigSchema(**g))
+                created_gigs += 1
+            except Exception:
+                pass
+
+    return {
+        "models_before": model_count,
+        "gigs_before": gig_count,
+        "models_created": created_models,
+        "gigs_created": created_gigs,
+        "total_models": db["model"].count_documents({}),
+        "total_gigs": db["gig"].count_documents({})
+    }
+
+
 # ----- Models (Hostesses) -----
 @app.post("/api/models")
 def create_model(payload: ModelSchema):
