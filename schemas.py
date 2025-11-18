@@ -76,6 +76,7 @@ class Gig(BaseModel):
     title: str
     club_name: str
     city: str
+    role: Optional[str] = Field(None, description="Bottle Service | Host | Event Model | Brand Ambassador")
     date: str = Field(..., description="ISO date or friendly date string")
     location: Optional[str] = None
     pay: Optional[str] = Field(None, description="Compensation details e.g. $50/hr + tips")
@@ -94,6 +95,57 @@ class Application(BaseModel):
     message: Optional[str] = None
     status: str = Field("pending", description="pending|approved|rejected")
     applied_at: Optional[datetime] = None
+
+# Safety/Comms & Compliance models for VIP Talent Network
+class Message(BaseModel):
+    """
+    In-app chat messages (logged & immutable for users)
+    Collection: "message"
+    """
+    thread_id: str = Field(..., description="Conversation thread id (e.g., gigId:modelId)")
+    sender_role: str = Field(..., description="talent|client")
+    sender_id: str
+    recipient_id: str
+    text: str
+    created_at: Optional[datetime] = None
+    pii_flag: bool = Field(False, description="Whether message contains potential external contact info")
+    pii_reason: Optional[str] = None
+
+class Contract(BaseModel):
+    """
+    Digitally generated contract for confirmed booking
+    Collection: "contract"
+    """
+    client_id: str
+    client_name: str
+    venue: str
+    city: str
+    date: str
+    start_time: str
+    end_time: str
+    role: str
+    base_pay: str
+    gratuity: Optional[str] = None
+    talent_id: str
+    status: str = Field("pending", description="pending|active|completed|cancelled")
+    contract_text: str
+    created_at: Optional[datetime] = None
+    check_in: Optional[str] = None
+    check_out: Optional[str] = None
+    signed_talent_at: Optional[datetime] = None
+    signed_client_at: Optional[datetime] = None
+
+class Report(BaseModel):
+    """
+    Conversation/contract reports for admin oversight
+    Collection: "report"
+    """
+    type: str = Field(..., description="conversation|contract")
+    thread_id: Optional[str] = None
+    contract_id: Optional[str] = None
+    reporter_id: str
+    reason: str
+    created_at: Optional[datetime] = None
 
 # Note: The Flames database viewer will automatically:
 # 1. Read these schemas from GET /schema endpoint
