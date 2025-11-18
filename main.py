@@ -1,8 +1,13 @@
 import os
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from typing import List, Any, Dict
+from bson import ObjectId
 
-app = FastAPI()
+from database import db, create_document, get_documents
+from schemas import Model as ModelSchema, Club as ClubSchema, Gig as GigSchema, Application as ApplicationSchema
+
+app = FastAPI(title="Hostess & Club Night Job Board API")
 
 app.add_middleware(
     CORSMiddleware,
@@ -12,13 +17,37 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+def _serialize(doc: Dict[str, Any]) -> Dict[str, Any]:
+    """Convert Mongo ObjectId and datetimes to strings for JSON response"""
+    if not doc:
+        return doc
+    d = dict(doc)
+    _id = d.get("_id")
+    if isinstance(_id, ObjectId):
+        d["id"] = str(_id)
+        del d["_id"]
+    # Convert nested ObjectIds or datetimes if necessary
+    for k, v in list(d.items()):
+        if isinstance(v, ObjectId):
+            d[k] = str(v)
+        elif hasattr(v, "isoformat"):
+            try:
+                d[k] = v.isoformat()
+            except Exception:
+                pass
+    return d
+
+
 @app.get("/")
 def read_root():
-    return {"message": "Hello from FastAPI Backend!"}
+    return {"message": "Hostess & Club Nights API running"}
+
 
 @app.get("/api/hello")
 def hello():
     return {"message": "Hello from the backend API!"}
+
 
 @app.get("/test")
 def test_database():
@@ -31,38 +60,126 @@ def test_database():
         "connection_status": "Not Connected",
         "collections": []
     }
-    
+
     try:
-        # Try to import database module
-        from database import db
-        
         if db is not None:
             response["database"] = "✅ Available"
             response["database_url"] = "✅ Configured"
             response["database_name"] = db.name if hasattr(db, 'name') else "✅ Connected"
             response["connection_status"] = "Connected"
-            
-            # Try to list collections to verify connectivity
             try:
                 collections = db.list_collection_names()
-                response["collections"] = collections[:10]  # Show first 10 collections
+                response["collections"] = collections[:10]
                 response["database"] = "✅ Connected & Working"
             except Exception as e:
                 response["database"] = f"⚠️  Connected but Error: {str(e)[:50]}"
         else:
             response["database"] = "⚠️  Available but not initialized"
-            
-    except ImportError:
-        response["database"] = "❌ Database module not found (run enable-database first)"
     except Exception as e:
         response["database"] = f"❌ Error: {str(e)[:50]}"
-    
-    # Check environment variables
-    import os
-    response["database_url"] = "✅ Set" if os.getenv("DATABASE_URL") else "❌ Not Set"
-    response["database_name"] = "✅ Set" if os.getenv("DATABASE_NAME") else "❌ Not Set"
-    
+
+    import os as _os
+    response["database_url"] = "✅ Set" if _os.getenv("DATABASE_URL") else "❌ Not Set"
+    response["database_name"] = "✅ Set" if _os.getenv("DATABASE_NAME") else "❌ Not Set"
+
     return response
+
+
+# ----- Schema endpoint for viewers/tools -----
+from schemas import User, Product, Model as ModelSchemaRef, Club as ClubSchemaRef, Gig as GigSchemaRef, Application as ApplicationSchemaRef
+
+@app.get("/schema")
+def get_schema():
+    return {
+        "user": User.model_json_schema(),
+        "product": Product.model_json_schema(),
+        "model": ModelSchemaRef.model_json_schema(),
+        "club": ClubSchemaRef.model_json_schema(),
+        "gig": GigSchemaRef.model_json_schema(),
+        "application": ApplicationSchemaRef.model_json_schema(),
+    }
+
+
+# ----- Models (Hostesses) -----
+@app.post("/api/models")
+def create_model(payload: ModelSchema):
+    new_id = create_document("model", payload)
+    return {"id": new_id}
+
+
+@app.get("/api/models")
+def list_models(city: str | None = None, skill: str | None = None):
+    query: Dict[str, Any] = {}
+    if city:
+        query["city"] = city
+    if skill:
+        query["skills"] = {"$in": [skill]}
+    docs = get_documents("model", query)
+    return [_serialize(d) for d in docs]
+
+
+# ----- Clubs -----
+@app.post("/api/clubs")
+def create_club(payload: ClubSchema):
+    new_id = create_document("club", payload)
+    return {"id": new_id}
+
+
+@app.get("/api/clubs")
+def list_clubs(city: str | None = None):
+    query: Dict[str, Any] = {"city": city} if city else {}
+    docs = get_documents("club", query)
+    return [_serialize(d) for d in docs]
+
+
+# ----- Gigs (Job posts) -----
+@app.post("/api/gigs")
+def create_gig(payload: GigSchema):
+    new_id = create_document("gig", payload)
+    return {"id": new_id}
+
+
+@app.get("/api/gigs")
+def list_gigs(city: str | None = None):
+    query: Dict[str, Any] = {"city": city} if city else {}
+    docs = get_documents("gig", query)
+    # Sort newest first by created_at if available
+    docs.sort(key=lambda d: d.get("created_at"), reverse=True)
+    return [_serialize(d) for d in docs]
+
+
+# ----- Applications -----
+@app.post("/api/applications")
+def apply_to_gig(payload: ApplicationSchema):
+    # Basic validation: ensure referenced ids exist
+    try:
+        gig = db["gig"].find_one({"_id": ObjectId(payload.gig_id)})
+        model = db["model"].find_one({"_id": ObjectId(payload.model_id)})
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid gig_id or model_id")
+
+    if not gig or not model:
+        raise HTTPException(status_code=404, detail="Gig or Model not found")
+
+    new_id = create_document("application", payload)
+    return {"id": new_id}
+
+
+@app.get("/api/applications")
+def list_applications(gig_id: str | None = None, model_id: str | None = None):
+    query: Dict[str, Any] = {}
+    if gig_id:
+        try:
+            query["gig_id"] = str(ObjectId(gig_id))
+        except Exception:
+            query["gig_id"] = gig_id
+    if model_id:
+        try:
+            query["model_id"] = str(ObjectId(model_id))
+        except Exception:
+            query["model_id"] = model_id
+    docs = get_documents("application", query)
+    return [_serialize(d) for d in docs]
 
 
 if __name__ == "__main__":
