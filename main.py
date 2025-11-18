@@ -100,7 +100,7 @@ def get_schema():
     }
 
 
-# ----- Seed demo data (10 models, 5 gigs) -----
+# ----- Seed demo data (beautiful placeholder models + detailed gigs) -----
 @app.post("/api/seed")
 def seed_demo():
     if db is None:
@@ -108,22 +108,193 @@ def seed_demo():
 
     model_count = db["model"].count_documents({})
     gig_count = db["gig"].count_documents({})
+    club_count = db["club"].count_documents({})
 
     created_models = 0
     created_gigs = 0
+    created_clubs = 0
 
-    if model_count < 10:
+    # Seed clubs first (used in gigs)
+    if club_count < 6:
+        demo_clubs = [
+            {"name": "Blue Flame", "city": "Miami", "contact_name": "Luca", "contact_email": "bookings@blueflame.miami"},
+            {"name": "Neon Room", "city": "Las Vegas", "contact_name": "Jess", "contact_email": "events@neonroom.vegas"},
+            {"name": "Skyline", "city": "New York", "contact_name": "Adrian", "contact_email": "host@skylinenyc.com"},
+            {"name": "Echo", "city": "Los Angeles", "contact_name": "Maya", "contact_email": "talent@echo.la"},
+            {"name": "Aurora", "city": "Chicago", "contact_name": "Samir", "contact_email": "vip@aurorachi.com"},
+            {"name": "Harbor House", "city": "San Diego", "contact_name": "Riley", "contact_email": "events@harborhouse.sd"},
+        ]
+        for c in demo_clubs:
+            try:
+                create_document("club", ClubSchema(**c))
+                created_clubs += 1
+            except Exception:
+                pass
+
+    # Seed beautiful placeholder models with bios and photos
+    if model_count < 12:
         demo_models = [
-            {"name": "Ava Collins", "city": "Miami", "skills": ["VIP", "Bottle Service", "Promo"], "experience_years": 3, "hourly_rate": 45},
-            {"name": "Mia Lopez", "city": "New York", "skills": ["Hostess", "Bilingual"], "experience_years": 2, "hourly_rate": 40},
-            {"name": "Sofia Rossi", "city": "Las Vegas", "skills": ["VIP", "Front Desk"], "experience_years": 4, "hourly_rate": 55},
-            {"name": "Isabella Nguyen", "city": "Los Angeles", "skills": ["Registration", "Promo", "Greeter"], "experience_years": 1, "hourly_rate": 35},
-            {"name": "Layla Patel", "city": "Chicago", "skills": ["Model", "VIP", "Check-in"], "experience_years": 5, "hourly_rate": 50},
-            {"name": "Zoe Martin", "city": "Austin", "skills": ["Promo", "Sampling"], "experience_years": 2, "hourly_rate": 38},
-            {"name": "Emily Carter", "city": "San Diego", "skills": ["VIP", "Hostess"], "experience_years": 3, "hourly_rate": 42},
-            {"name": "Aria Kim", "city": "Seattle", "skills": ["Registration", "Greeter"], "experience_years": 1, "hourly_rate": 32},
-            {"name": "Victoria Adams", "city": "Houston", "skills": ["Bottle Service", "VIP"], "experience_years": 6, "hourly_rate": 60},
-            {"name": "Nina Petrova", "city": "Miami", "skills": ["Model", "Promo"], "experience_years": 3, "hourly_rate": 45}
+            {
+                "name": "Ava Collins",
+                "city": "Miami",
+                "bio": "Sunset lover, fluent in Spanish, known for calm VIP table energy and immaculate timing.",
+                "experience_years": 3,
+                "hourly_rate": 55,
+                "skills": ["VIP", "Bottle Service", "Promo", "Bilingual"],
+                "photos": [
+                    "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=800",
+                    "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=800"
+                ],
+                "instagram": "@ava.collins",
+                "phone": "+1-305-555-0172",
+            },
+            {
+                "name": "Mia Lopez",
+                "city": "New York",
+                "bio": "Broadway-bright smile, concierge-level hostess focused on smooth check-ins and VIP care.",
+                "experience_years": 4,
+                "hourly_rate": 60,
+                "skills": ["Hostess", "Bilingual", "Front Desk", "Greeter"],
+                "photos": [
+                    "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=800",
+                    "https://images.unsplash.com/photo-1524503033411-c9566986fc8f?w=800"
+                ],
+                "instagram": "@mialo.nyc",
+                "phone": "+1-212-555-0146",
+            },
+            {
+                "name": "Sofia Rossi",
+                "city": "Las Vegas",
+                "bio": "Italian charm meets Vegas pace. Leads bottle parades, keeps teams synced during peak hours.",
+                "experience_years": 5,
+                "hourly_rate": 70,
+                "skills": ["Bottle Service", "VIP", "Team Lead"],
+                "photos": [
+                    "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=800",
+                    "https://images.unsplash.com/photo-1519345182560-3f2917c472ef?w=800"
+                ],
+                "instagram": "@sofiarossi.vegas",
+                "phone": "+1-702-555-0112",
+            },
+            {
+                "name": "Isabella Nguyen",
+                "city": "Los Angeles",
+                "bio": "Warm, camera-comfortable promo model with a knack for guest flow and product moments.",
+                "experience_years": 2,
+                "hourly_rate": 48,
+                "skills": ["Promo", "Greeter", "Registration"],
+                "photos": [
+                    "https://images.unsplash.com/photo-1554151228-14d9def656e4?w=800",
+                    "https://images.unsplash.com/photo-1520975682031-c93df73c5f21?w=800"
+                ],
+                "instagram": "@isabellanguyen.la",
+                "phone": "+1-424-555-0130",
+            },
+            {
+                "name": "Layla Patel",
+                "city": "Chicago",
+                "bio": "Detail-first VIP table host, excels with tech check-in systems and high-end service.",
+                "experience_years": 6,
+                "hourly_rate": 65,
+                "skills": ["VIP", "Check-in", "Hostess"],
+                "photos": [
+                    "https://images.unsplash.com/photo-1531123897727-8f129e1688ce?w=800",
+                    "https://images.unsplash.com/photo-1524502397800-2eeaad7c3fe5?w=800"
+                ],
+                "instagram": "@layla.chi",
+                "phone": "+1-773-555-0168",
+            },
+            {
+                "name": "Zoe Martin",
+                "city": "Austin",
+                "bio": "Hospitality heartbeat—keeps lines moving, samples flowing, smiles steady.",
+                "experience_years": 3,
+                "hourly_rate": 45,
+                "skills": ["Promo", "Sampling", "Greeter"],
+                "photos": [
+                    "https://images.unsplash.com/photo-1547425260-76bcadfb4f2c?w=800"
+                ],
+                "instagram": "@zoe.in.atx",
+                "phone": "+1-512-555-0107",
+            },
+            {
+                "name": "Emily Carter",
+                "city": "San Diego",
+                "bio": "Ocean-calm presence with sharp VIP instincts; guests remember the experience.",
+                "experience_years": 4,
+                "hourly_rate": 58,
+                "skills": ["VIP", "Hostess", "Bottle Service"],
+                "photos": [
+                    "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=800"
+                ],
+                "instagram": "@emilycsd",
+                "phone": "+1-619-555-0194",
+            },
+            {
+                "name": "Aria Kim",
+                "city": "Seattle",
+                "bio": "Efficient front desk lead; bilingual in Korean/English; thrives in structured chaos.",
+                "experience_years": 2,
+                "hourly_rate": 44,
+                "skills": ["Registration", "Greeter", "Bilingual"],
+                "photos": [
+                    "https://images.unsplash.com/photo-1544006659-f0b21884ce1d?w=800"
+                ],
+                "instagram": "@aria.kim",
+                "phone": "+1-206-555-0159",
+            },
+            {
+                "name": "Victoria Adams",
+                "city": "Houston",
+                "bio": "Bottle show captain; keeps VIP narratives glowing and service crisp all night.",
+                "experience_years": 7,
+                "hourly_rate": 75,
+                "skills": ["Bottle Service", "VIP", "Lead"],
+                "photos": [
+                    "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=800"
+                ],
+                "instagram": "@victoria.vip",
+                "phone": "+1-713-555-0123",
+            },
+            {
+                "name": "Nina Petrova",
+                "city": "Miami",
+                "bio": "International promo model; elevates brand moments and guest delight in equal measure.",
+                "experience_years": 3,
+                "hourly_rate": 52,
+                "skills": ["Model", "Promo", "VIP"],
+                "photos": [
+                    "https://images.unsplash.com/photo-1544005316-04ae1f6bdfd3?w=800"
+                ],
+                "instagram": "@nina.miami",
+                "phone": "+1-305-555-0188",
+            },
+            {
+                "name": "Jasmine Ray",
+                "city": "Los Angeles",
+                "bio": "Storyteller smile; specializes in red-carpet style guest journeys and premium queues.",
+                "experience_years": 5,
+                "hourly_rate": 68,
+                "skills": ["Hostess", "VIP", "Front Desk"],
+                "photos": [
+                    "https://images.unsplash.com/photo-1527980965255-d3b416303d12?w=800"
+                ],
+                "instagram": "@jasmine.ray",
+                "phone": "+1-213-555-0170",
+            },
+            {
+                "name": "Camila Alvarez",
+                "city": "Dallas",
+                "bio": "Event-savvy bottle girl with choreography finesse for parades and special moments.",
+                "experience_years": 4,
+                "hourly_rate": 62,
+                "skills": ["Bottle Service", "VIP", "Promo"],
+                "photos": [
+                    "https://images.unsplash.com/photo-1520975916090-3105956fcd7a?w=800"
+                ],
+                "instagram": "@camila.alv",
+                "phone": "+1-469-555-0190",
+            },
         ]
         for m in demo_models:
             try:
@@ -132,13 +303,129 @@ def seed_demo():
             except Exception:
                 pass
 
-    if gig_count < 5:
+    # Seed detailed gigs for bottle girls & hostesses
+    if gig_count < 10:
         demo_gigs = [
-            {"title": "VIP Hostess - Grand Opening", "club_name": "Blue Flame", "city": "Miami", "date": "Fri 10PM-2AM", "pay": "$45/hr + tips", "requirements": ["VIP experience", "All black attire"], "spots": 3, "notes": "4-hour shift for opening night."},
-            {"title": "Bottle Service Model", "club_name": "Neon Room", "city": "Las Vegas", "date": "Sat 9PM-4AM", "pay": "$55/hr + bonus", "requirements": ["Bottle service", "Friendly, energetic"], "spots": 4, "notes": "All-night set, peak hours 11PM-2AM."},
-            {"title": "Check-in & Greeter", "club_name": "Skyline", "city": "New York", "date": "Thu 7PM-11PM", "pay": "$35/hr", "requirements": ["Registration", "Bilingual preferred"], "spots": 2, "notes": "Short 4-hour evening event."},
-            {"title": "Promo Team - Launch Party", "club_name": "Echo", "city": "Los Angeles", "date": "Fri 8PM-12AM", "pay": "$40/hr + merch", "requirements": ["Promo", "Comfortable on camera"], "spots": 5, "notes": "Half-night promo push."},
-            {"title": "VIP Table Host", "club_name": "Aurora", "city": "Chicago", "date": "Sat 10PM-3AM", "pay": "$50/hr + tips", "requirements": ["VIP", "High-end service"], "spots": 2, "notes": "Full-night coverage for VIP tables."}
+            {
+                "title": "Bottle Service Parade – Grand Opening",
+                "club_name": "Blue Flame",
+                "city": "Miami",
+                "date": "Fri 10:00PM – 2:00AM",
+                "location": "South Beach",
+                "pay": "$60/hr + tips + $100 peak bonus",
+                "dress_code": "All black chic, heels",
+                "requirements": ["Bottle service experience", "Comfortable leading parades", "Photo-friendly"],
+                "spots": 4,
+                "notes": "Peak bonus 11:30PM–1:30AM. Few-hour coverage available or whole night."
+            },
+            {
+                "title": "VIP Hostess – Celebrity Table Night",
+                "club_name": "Neon Room",
+                "city": "Las Vegas",
+                "date": "Sat 9:00PM – 4:00AM",
+                "location": "The Strip",
+                "pay": "$70/hr + tips",
+                "dress_code": "Elegant black dress, closed-toe heels",
+                "requirements": ["VIP check-in", "Guest seating", "Bilingual a plus"],
+                "spots": 3,
+                "notes": "Whole night preferred; peak hours 11PM–2AM."
+            },
+            {
+                "title": "Premium Check‑In & Greeter – Rooftop Sessions",
+                "club_name": "Skyline",
+                "city": "New York",
+                "date": "Thu 7:00PM – 11:00PM",
+                "location": "Midtown rooftop",
+                "pay": "$45/hr (flat)",
+                "dress_code": "Monochrome smart-casual",
+                "requirements": ["Registration tablets", "Line flow management", "Bilingual preferred"],
+                "spots": 2,
+                "notes": "Short 4‑hour shift; perfect for guestlist & QR scanning specialists."
+            },
+            {
+                "title": "Brand Promo Team – Sunset Launch",
+                "club_name": "Echo",
+                "city": "Los Angeles",
+                "date": "Fri 6:00PM – 10:00PM",
+                "location": "West Hollywood",
+                "pay": "$50/hr + merch + content credit",
+                "dress_code": "On‑brand wardrobe provided",
+                "requirements": ["Promo sampling", "On‑camera comfort", "Soft spoken story points"],
+                "spots": 5,
+                "notes": "Half‑night promo push; golden hour content capture included."
+            },
+            {
+                "title": "VIP Table Host – Champagne Service",
+                "club_name": "Aurora",
+                "city": "Chicago",
+                "date": "Sat 10:00PM – 3:00AM",
+                "location": "River North",
+                "pay": "$65/hr + tips",
+                "dress_code": "Black suit‑inspired dress or tailored set",
+                "requirements": ["High‑end service", "Table etiquette", "Composure under pressure"],
+                "spots": 2,
+                "notes": "Full‑night coverage strongly preferred."
+            },
+            {
+                "title": "Harbor Gala Hostess – Waterfront Soirée",
+                "club_name": "Harbor House",
+                "city": "San Diego",
+                "date": "Sun 5:00PM – 10:00PM",
+                "location": "Marina District",
+                "pay": "$55/hr + dinner",
+                "dress_code": "Coastal formal (navy/cream)",
+                "requirements": ["Seating charts", "Silent auction assist", "Warm guest greeting"],
+                "spots": 3,
+                "notes": "Event concludes by 10PM; content team onsite for red‑carpet arrivals."
+            },
+            {
+                "title": "Peak Hours Bottle Girl – DJ Residency",
+                "club_name": "Blue Flame",
+                "city": "Miami",
+                "date": "Sat 11:00PM – 2:30AM",
+                "location": "South Beach",
+                "pay": "$70/hr + tips (peak block)",
+                "dress_code": "All black with club accessories",
+                "requirements": ["Tray handling", "Sparkler safety", "Team coordination"],
+                "spots": 6,
+                "notes": "Few hours only – peak block assignment."
+            },
+            {
+                "title": "Concierge Host – Members Night",
+                "club_name": "Neon Room",
+                "city": "Las Vegas",
+                "date": "Fri 8:00PM – 1:00AM",
+                "location": "The Strip",
+                "pay": "$58/hr + loyalty bonus",
+                "dress_code": "Minimalist black, hair up",
+                "requirements": ["Member check‑in", "Table escorts", "Calm problem solving"],
+                "spots": 2,
+                "notes": "Clienteling focus; strong memory for names is a plus."
+            },
+            {
+                "title": "Door Hostess – Fashion Week Afterparty",
+                "club_name": "Skyline",
+                "city": "New York",
+                "date": "Wed 9:00PM – 1:00AM",
+                "location": "Chelsea",
+                "pay": "$60/hr (flat) + ride home",
+                "dress_code": "Black with metallic accent",
+                "requirements": ["Guestlist control", "PR coordination", "Photo call timing"],
+                "spots": 4,
+                "notes": "High‑profile crowd; discretion required."
+            },
+            {
+                "title": "VIP Bottle Service – Tech Summit After Dark",
+                "club_name": "Echo",
+                "city": "Los Angeles",
+                "date": "Tue 8:30PM – 1:30AM",
+                "location": "Downtown",
+                "pay": "$68/hr + tips + $75 closing bonus",
+                "dress_code": "Modern black, low‑profile heels",
+                "requirements": ["Bottle service", "Corporate crowd etiquette", "Pace management"],
+                "spots": 5,
+                "notes": "Whole night preferred; must be punctual and detail‑oriented."
+            },
         ]
         for g in demo_gigs:
             try:
@@ -150,10 +437,13 @@ def seed_demo():
     return {
         "models_before": model_count,
         "gigs_before": gig_count,
+        "clubs_before": club_count,
         "models_created": created_models,
         "gigs_created": created_gigs,
+        "clubs_created": created_clubs,
         "total_models": db["model"].count_documents({}),
-        "total_gigs": db["gig"].count_documents({})
+        "total_gigs": db["gig"].count_documents({}),
+        "total_clubs": db["club"].count_documents({}),
     }
 
 
